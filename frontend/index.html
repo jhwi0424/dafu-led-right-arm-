@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>大符右灯臂 · 调光台</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap toolbar">
+      <div class="identity">
+        <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>大符右灯臂</span><span class="identity-divider" aria-hidden="true"></span>
+        <span class="board">nRF52840</span>
+      </div>
+      <div class="header-actions">
+        <span id="connection" class="connection" data-mode="offline" role="status">未连接</span>
+        <button class="button quiet" id="demo" type="button">离线演示</button>
+        <button class="button primary" id="connect" type="button">
+          <span class="plug" aria-hidden="true"></span><span id="connect-label">连接串口</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>右灯臂调光台</h1>
+        <p>通过 USB 调整 54 颗 WS2812 的蓝光亮度，查看控制器实时回报。</p>
+      </div>
+      <span class="serial-tag"><span aria-hidden="true">↔</span> USB CDC / 115200</span>
+    </div>
+
+    <div class="dashboard">
+      <section class="control" aria-labelledby="control-title">
+        <div class="section-head">
+          <h2 id="control-title">亮度控制</h2>
+          <span id="output-state" class="output-state" data-output="off">等待连接</span>
+        </div>
+
+        <div class="readout">
+          <div>
+            <div class="caption">已下发等效占空比</div>
+            <div class="display"><span id="duty">—</span><span class="unit">%</span></div>
+          </div>
+          <div class="raw"><span>蓝通道 B</span><strong id="raw">— / 255</strong></div>
+        </div>
+
+        <div class="strip" aria-hidden="true"><div id="led-grid"></div></div>
+        <div class="strip-caption"><span>灯链示意</span><span id="pixel-caption">54 颗 · 蓝光</span></div>
+
+        <fieldset class="adjust" id="controls" disabled>
+          <div class="adjust-label"><label for="brightness">目标占空比</label><output id="target" for="brightness">0.00%</output></div>
+          <div class="slider-row">
+            <button type="button" class="step" id="down" aria-label="降低一档">−</button>
+            <input id="brightness" type="range" min="0" max="8" step="1" value="0" aria-describedby="range-note">
+            <button type="button" class="step" id="up" aria-label="提高一档">+</button>
+          </div>
+          <div id="range-note" class="range-note"><span>0%</span><span id="slider-limit">3.14% 上限</span></div>
+          <button id="off" class="button off" type="button"><span class="off-icon" aria-hidden="true"></span>立即熄灯</button>
+        </fieldset>
+        <p id="message" class="message" data-tone="info" role="status">连接右灯臂开始调光，或打开离线演示。</p>
+      </section>
+
+      <section class="panel telemetry" aria-labelledby="telemetry-title">
+        <div class="section-head">
+          <h2 id="telemetry-title">实时参数</h2>
+          <span id="age" class="fine mono">等待数据</span>
+        </div>
+        <dl class="telemetry-list">
+          <div><dt>驱动状态</dt><dd id="drive-state">—</dd></div>
+          <div><dt>灯珠 / 引脚</dt><dd id="led-info">—</dd></div>
+          <div><dt>色序 / RGB 值</dt><dd id="color">—</dd></div>
+          <div><dt>数据速率</dt><dd id="rate">—</dd></div>
+          <div><dt>数据位 0 / 1 占空比</dt><dd id="timing">—</dd></div>
+          <div><dt>锁存低电平</dt><dd id="latch">—</dd></div>
+          <div><dt>数据帧位数</dt><dd id="frame-bits">—</dd></div>
+          <div><dt>帧刷新间隔</dt><dd id="refresh">—</dd></div>
+          <div><dt>已发帧数 / 最近一帧</dt><dd id="frames">—</dd></div>
+          <div><dt>运行时间</dt><dd id="uptime">—</dd></div>
+          <div><dt>最近停灯原因</dt><dd id="reason">—</dd></div>
+          <div><dt>控制器供电 VDD</dt><dd id="voltage">—</dd></div>
+          <div><dt>控制器芯片温度</dt><dd id="temperature">—</dd></div>
+        </dl>
+        <div class="sensor-note"><strong>灯板端电压 / 电流 / 温度</strong><span>未接入传感器</span></div>
+      </section>
+
+      <section class="panel trend" aria-labelledby="trend-title">
+        <div class="section-head">
+          <h2 id="trend-title">占空比趋势</h2>
+          <span class="fine">最近 30 秒</span>
+        </div>
+        <div class="plot">
+          <canvas id="chart" role="img" aria-label="最近 30 秒的已下发等效占空比"></canvas>
+          <span id="chart-empty" class="chart-empty">连接右灯臂后显示回报曲线</span>
+        </div>
+        <div class="chart-key"><i aria-hidden="true"></i>已下发等效占空比</div>
+      </section>
+
+      <section class="panel guard" aria-labelledby="guard-title">
+        <div class="section-head"><h2 id="guard-title">输出保护</h2></div>
+        <dl class="guard-list">
+          <div><dt>固件亮度上限</dt><dd id="ceiling">8 / 255</dd></div>
+          <div><dt>通信超时熄灯</dt><dd id="watchdog">2 s</dd></div>
+          <div><dt>通信保护状态</dt><dd id="watchdog-state">—</dd></div>
+          <div><dt>开机蓝通道 B</dt><dd id="boot-blue">4 / 255</dd></div>
+        </dl>
+        <p>网页调光后，串口断开或心跳超时会自动熄灯。</p>
+      </section>
+    </div>
+    <footer>等效占空比按蓝通道值 ÷ 255 换算。串行数据时序固定。</footer>
+  </main>
+</body>
+</html>
